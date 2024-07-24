@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import csv
+import sqlite3
 
 class Model(ABC):
     @classmethod
@@ -112,3 +113,39 @@ class DAO_CSV_Director(DAO_CSV):
 class DAO_CSV_Pelicula(DAO_CSV):
     model = Pelicula
 
+class DAO_SQLite(DAO):
+    model = None
+    tabla = None
+    
+    def __init__(self, path):
+        self.path = path
+    
+    def todos(self):
+        conn = sqlite3.connect(self.path)
+        cur = conn.cursor()
+        nombres = list(map(lambda item: item[0], cur.description))
+        cur.execute(f"Select * from {self.tabla}")
+
+        lista = self.__rows_to_dictlist(cur.fetchall(), nombres)
+        resultado = []
+        for registro in lista:
+            resultado.append(self.model.create_from_dict(registro))
+        conn.close()
+        return resultado
+
+    def  __rows_to_dictlist(self, filas, nombres):
+        registros = []
+        for fila in filas:
+            registro = {}
+            pos = 0
+            for nombre in nombres:
+                registro[nombre] = fila[pos]
+                pos += 1
+
+            registros.append(registro)
+        return registros
+
+        
+class DAO_SQLite_Director(DAO_SQLite):
+    model = Director
+    tabla = "directores"
