@@ -107,33 +107,34 @@ class DAO_CSV(DAO):
                 lista.append(self.model.create_from_dict(registro))
         return lista     
 
-class DAO_CSV_Director(DAO_CSV):
-    model = Director
-
-class DAO_CSV_Pelicula(DAO_CSV):
-    model = Pelicula
 
 class DAO_SQLite(DAO):
     model = None
     tabla = None
-    
-    def __init__(self, path):
+
+    def __init__(self, path) -> None:
         self.path = path
-    
+
     def todos(self):
+        """
+        acceder a sqlite y traer todos los registros de la tabla del modelo
+        con la funcion rows_to_dictlist traerlos en forma de diccionario
+        devolverlos como instancias de Model
+        """
         conn = sqlite3.connect(self.path)
         cur = conn.cursor()
-        nombres = list(map(lambda item: item[0], cur.description))
-        cur.execute(f"Select * from {self.tabla}")
 
-        lista = self.__rows_to_dictlist(cur.fetchall(), nombres)
-        resultado = []
-        for registro in lista:
-            resultado.append(self.model.create_from_dict(registro))
+        cur.execute(f"select * from {self.tabla}")
+        
+        nombres = list(map(lambda item: item[0], cur.description))
+
+        resultado = self.__rows_to_dictlist(cur.fetchall(), nombres)
+
         conn.close()
+
         return resultado
 
-    def  __rows_to_dictlist(self, filas, nombres):
+    def __rows_to_dictlist(self, filas, nombres):
         registros = []
         for fila in filas:
             registro = {}
@@ -142,10 +143,26 @@ class DAO_SQLite(DAO):
                 registro[nombre] = fila[pos]
                 pos += 1
 
-            registros.append(registro)
+            """
+            for pos, nombre in enumerate(nombres):
+                registro[nombre] = fila[pos]
+            """
+            registros.append(self.model.create_from_dict(registro))
         return registros
 
-        
+
+class DAO_CSV_Director(DAO_CSV):
+    model = Director
+
+class DAO_CSV_Pelicula(DAO_CSV):
+    model = Pelicula
+
+
+
 class DAO_SQLite_Director(DAO_SQLite):
     model = Director
     tabla = "directores"
+
+class DAO_SQLite_Pelicula(DAO_SQLite):
+    model = Pelicula
+    tabla = "peliculas"
